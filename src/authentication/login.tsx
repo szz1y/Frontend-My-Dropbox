@@ -4,7 +4,9 @@ import logo from "../../public/logo-dropbox.svg";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
-const Login: React.FC = () => {
+const Login: React.FC<{ setIsAuthenticated: Function }> = ({
+  setIsAuthenticated,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -30,6 +32,7 @@ const Login: React.FC = () => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      setIsAuthenticated(true);
       navigate("/");
     } catch (error) {
       if (error instanceof Error) {
@@ -40,7 +43,6 @@ const Login: React.FC = () => {
       console.error(error);
     }
   };
-
   return (
     <div>
       <section className="bg-white dark:bg-gray-900">
@@ -111,9 +113,17 @@ const Login: React.FC = () => {
             <div className="mt-6">
               <button
                 type="submit"
-                className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-blue-500 rounded-lg hover:bg-blue-400 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-50"
+                className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-blue-500 rounded-lg hover:bg-blue-400 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-50 relative"
               >
                 Sign in
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-3 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  ></svg>
+                </span>
               </button>
             </div>
             <div className="flex justify-between items-center pt-3">
