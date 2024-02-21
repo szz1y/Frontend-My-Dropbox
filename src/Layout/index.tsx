@@ -3,11 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import logo from "../../public/logo-dropbox.svg";
 import logout from "../../public/logout.svg";
 import profile from "../../public/profile.svg";
-import {
-  auth,
-  usernameCollection,
-  usersCollection,
-} from "../firebase/firebase";
+import { auth, usersCollection } from "../firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 const IndexLayout: React.FC = () => {
@@ -153,7 +149,7 @@ const IndexLayout: React.FC = () => {
           </Link>
         </div>
       </div>
-      <div>
+      <div className="w-full">
         <Outlet />
       </div>
     </div>
