@@ -7,6 +7,7 @@ import NotFound from "./NotFound";
 import Home from "./page/home";
 import Search from "./page/search";
 import Profile from "./page/profile";
+import Folder from "./page/folder";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -31,6 +32,7 @@ const App = () => {
 
         <Route path="/" element={<IndexLayout />}>
           <Route path="/" index element={<Home />} />
+          <Route path="/folder/:folderId" element={<Folder />} />
           <Route path="/search" index element={<Search />} />
           <Route path="/profile" index element={<Profile />} />
         </Route>

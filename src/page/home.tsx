@@ -19,6 +19,7 @@ import file2 from "../../public/file2.svg";
 import folder from "../../public/folder.svg";
 import folder2 from "../../public/folder2.svg";
 import close from "../../public/close.svg";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -49,12 +50,12 @@ const Home = () => {
         setFiles(fileList);
         setFolders(folderList);
       } catch (error) {
-        console.error("Ma'lumotlarni olishda xatolik:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
     fetchData();
-  }, [isFolderModalOpen]); // isFolderModalOpen o'zgaruvchisiga bog'liq useEffect
+  }, [isFolderModalOpen]);
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -80,7 +81,7 @@ const Home = () => {
         }
       },
       (error) => {
-        console.error("Faylni yuklashda xatolik:", error);
+        console.error("Error uploading file:", error);
       },
       async () => {
         try {
@@ -92,7 +93,7 @@ const Home = () => {
             { name: selectedFile.name, url: downloadURL },
           ]);
         } catch (error) {
-          console.error("Yuklash URL manzilini olishda xatolik:", error);
+          console.error("Error getting download URL:", error);
         }
       }
     );
@@ -104,7 +105,7 @@ const Home = () => {
       const newFile = { name: fileName, url: fileUrl };
       await addDoc(filesRef, newFile);
     } catch (error) {
-      console.error("Firestorega fayl metadatasini qo'shishda xatolik:", error);
+      console.error("Error adding file metadata to Firestore:", error);
     }
   };
 
@@ -117,17 +118,19 @@ const Home = () => {
 
   const handleCopy = (url) => {
     navigator.clipboard.writeText(url);
-    alert("Link nusxasi joylashtirildi!");
+    alert("Link copied to clipboard!");
   };
 
   const handleDeleteFile = async (url, id) => {
     try {
-      const fileRef = ref(storage, url);
-      await deleteObject(fileRef);
-      await deleteDoc(doc(db, "files", id));
+      console.log("Deleting file with id:", id);
+      console.log("DB:", db);
+      const fileRef = doc(db, "files", id);
+      await deleteDoc(fileRef);
       setFiles((prevFiles) => prevFiles.filter((file) => file.url !== url));
+      console.log("File deleted successfully");
     } catch (error) {
-      console.error("Faylni o'chirishda xatolik:", error);
+      console.error("Error deleting file:", error);
     }
   };
 
@@ -138,7 +141,7 @@ const Home = () => {
         prevFolders.filter((folder) => folder.id !== id)
       );
     } catch (error) {
-      console.error("Papkani o'chirishda xatolik:", error);
+      console.error("Error deleting folder:", error);
     }
   };
 
@@ -153,15 +156,24 @@ const Home = () => {
       setIsFolderModalOpen(false);
       setFolderName("");
     } catch (error) {
-      console.error("Papka yaratishda xatolik:", error);
+      console.error("Error creating folder:", error);
     }
+  };
+
+  const handleFolderNameChange = (e) => {
+    setFolderName(e.target.value);
+  };
+
+  const openFolderModal = () => {
+    setFolderName(""); // Holatni tozalash
+    setIsFolderModalOpen(true); // Modalni ochish
   };
 
   return (
     <header>
       <div className="container-home flex justify-between">
         <div>
-          <h3 className="text-xl font-bold text-center py-5">Faylni yuklash</h3>
+          <h3 className="text-xl font-bold text-center py-5">Upload File</h3>
           <label className="custum-file-upload" htmlFor="file">
             <div className="icon">
               <img src={file} alt="file" />
@@ -178,16 +190,13 @@ const Home = () => {
               onClick={handleFileUpload}
               className="rounded-full bg-blue-500 text-white px-3 py-2 m-3 hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
             >
-              Yuklash
+              Upload
             </button>
           </div>
         </div>
         <div>
-          <h3 className="text-xl font-bold text-center py-5">Papka yuklash</h3>
-          <button
-            onClick={() => setIsFolderModalOpen(true)}
-            className="custum-file-upload"
-          >
+          <h3 className="text-xl font-bold text-center py-5">Create Folder</h3>
+          <button onClick={openFolderModal} className="custum-file-upload">
             <div className="icon">
               <img src={folder} alt="folder" />
             </div>
@@ -205,16 +214,16 @@ const Home = () => {
               </button>
               <input
                 type="text"
-                placeholder="Papka nomini kiriting"
+                placeholder="Enter Folder Name"
                 value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
+                onChange={handleFolderNameChange}
                 className="border border-gray-300 rounded px-3 py-2 mb-3"
               />
               <button
                 onClick={createFolder}
                 className="rounded-full bg-blue-500 text-white px-3 py-2 m-3 hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
               >
-                Papka yaratish
+                Create Folder
               </button>
             </div>
           </div>
@@ -232,57 +241,63 @@ const Home = () => {
               <img src={close} alt="close" />
             </button>
             <p className="font-bold p-3 text-green-500">
-              Fayl muvaffaqiyatli yuklandi!
+              Uploading file successful !!!
             </p>
             <div className="flex justify-center p-3">
-              <a
-                href={uploadedFileUrl}
-                className="text-blue-500"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <h2 className="font-bold">Faylni ochish</h2>
-              </a>
+              <progress value={fileUploadProgress} max="100" />
             </div>
+            {fileUploadProgress === 100 && (
+              <div className="flex justify-center p-3">
+                <a
+                  href={uploadedFileUrl}
+                  className="text-blue-500"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <h2 className="font-bold">Open File</h2>
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
+
       <div className="flex justify-around file-list">
         <table className="border-collapse ml-5">
           <thead>
             <tr className="border-b-2 border-gray-400">
-              <th className="px-4 py-2 text-left">Fayl nomi</th>
+              <th className="px-4 py-2 text-left">File Name</th>
             </tr>
           </thead>
           <tbody>
             {files.map((file, index) => (
               <tr
                 key={index}
-                className="flex items-center border-b border-gray-300"
+                className="flex justify-between items-center border-b border-gray-300"
               >
-                <td className="flex items-center px-4 py-2">
-                  <img src={file2} alt="file2" />
+                <td className="flex items-center  px-4 py-2">
+                  <img className="mr-2" src={file2} alt="file2" />
                   <a
                     href={file.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
                   >
-                    <h3 className="font-bold">{file.name}</h3>
+                    <p className="font-bold text-sm">{file.name}</p>
                   </a>
                 </td>
-                <td className=" flex items-center px-4 py-2">
+                <td className="px-4 py-2">
                   <button
                     className="px-3 py-1 bg-teal-400 text-white rounded hover:bg-teal-500"
                     onClick={() => handleCopy(file.url)}
                   >
-                    Nusxalash
+                    Copy
                   </button>
                   <button
                     className="px-3 py-1 ml-3 bg-red-600 text-white rounded hover:bg-red-700"
                     onClick={() => handleDeleteFile(file.url, file.id)}
                   >
-                    O'chirish
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -292,22 +307,27 @@ const Home = () => {
         <table className="border-collapse ml-5">
           <thead>
             <tr className="border-b-2 border-gray-400">
-              <th className="px-4 py-2 text-left">Papka nomi</th>
+              <th className="px-4 py-2 text-left">Folder Name</th>
             </tr>
           </thead>
           <tbody>
             {folders.map((folder, index) => (
-              <tr key={index} className="flex items-center justify-between border-b border-gray-300">
+              <tr
+                key={index}
+                className="flex items-center justify-between border-b border-gray-300"
+              >
                 <td className="flex items-center px-4 py-2">
-                  <img src={folder2} alt="folder2" />
-                  <h3 className="font-bold">{folder.name}</h3>
+                  <img className="mr-2" src={folder2} alt="folder2" />
+                  <Link to={`/folder/${folder.id}`}>
+                    <h3 className="font-bold">{folder.name}</h3>
+                  </Link>
                 </td>
                 <td className=" flex items-center px-4 py-2">
                   <button
                     className="px-3 py-1 ml-3 bg-red-600 text-white rounded hover:bg-red-700"
                     onClick={() => handleDeleteFolder(folder.id)}
                   >
-                    O'chirish
+                    Delete
                   </button>
                 </td>
               </tr>
