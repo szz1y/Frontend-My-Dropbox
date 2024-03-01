@@ -4,13 +4,13 @@ import { getFirestore, collection } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA2eqpZU-lfysqUr9nyMOvCKMwYZrw5JAE",
-  authDomain: "dropbox-ziyodabonu.firebaseapp.com",
-  projectId: "dropbox-ziyodabonu",
-  storageBucket: "dropbox-ziyodabonu.appspot.com",
-  messagingSenderId: "168975500013",
-  appId: "1:168975500013:web:b2a084369efc9d1148c2e4",
-  measurementId: "G-W4XG35THN7",
+  apiKey: "AIzaSyCwzIERJGUH4tLtkJisKQ6KMEiwZMEEg6o",
+  authDomain: "ziyodabonu-dropbox.firebaseapp.com",
+  projectId: "ziyodabonu-dropbox",
+  storageBucket: "ziyodabonu-dropbox.appspot.com",
+  messagingSenderId: "296176554184",
+  appId: "1:296176554184:web:a97d4be5de59347d6a15fd",
+  measurementId: "G-SD1YM8PCE7",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -22,6 +22,3 @@ const usersCollection = collection(db, "users");
 const usernamesCollection = collection(db, "usernames");
 
 export { auth, db, usersCollection, usernamesCollection, storage };
-
-
-

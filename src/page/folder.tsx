@@ -1,88 +1,65 @@
-import { useEffect, useState } from "react";
-import { auth, db } from "../firebase/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  deleteDoc,
-} from "firebase/firestore";
-import { Link } from "react-router-dom";
-
-function Folder() {
-  const [userFolders, setUserFolders] = useState([]);
-  const [authUser, setAuthUser] = useState(null);
+import { Fragment, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { db, storage } from "../firebase/firebase"; // Import storage from Firebase
+const FolderPage: React.FC = () => {
+  const { folderId } = useParams<{ folderId: string }>();
+  const [folderName, setFolderName] = useState<string>("");
+  const [uploading, setUploading] = useState<boolean>(false); // State to track uploading status
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setAuthUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+    const fetchFolderName = async () => {
+      try {
+        const folderDoc = await getDoc(doc(db, "folders", folderId));
+        if (folderDoc.exists()) {
+          const folderData = folderDoc.data();
+          if (folderData) {
+            setFolderName(folderData.name);
+          }
+        } else {
+          console.log("Folder not found");
+        }
+      } catch (error) {
+        console.error("Error fetching folder name:", error);
+      }
+    };
 
-  useEffect(() => {
-    if (!authUser) {
-      return;
-    }
-    const foldersRef = collection(db, "folders");
-    const q = query(
-      foldersRef,
-      where("userId", "==", authUser.uid),
-      where("parentId", "==", null)
-    );
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const foldersData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUserFolders(foldersData);
-    });
-    return () => unsubscribe();
-  }, [authUser]);
+    fetchFolderName();
+  }, [folderId]);
 
-  const handleDeleteFolder = async (folderId) => {
-    try {
-      const folderRef = doc(db, "folders", folderId);
-      await deleteDoc(folderRef);
-
-      console.log("Folder deleted successfully:", folderId);
-    } catch (error) {
-      console.error("Error deleting folder:", error);
+  // Function to handle file upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploading(true);
+      const storageRef = storage.ref(`${folderId}/${file.name}`);
+      try {
+        await storageRef.put(file);
+        console.log("File uploaded successfully");
+        // You can add additional logic here, such as updating UI or state
+      } catch (error) {
+        console.error("Error uploading file:", error);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
   return (
-    <div className="container">
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th scope="col">Folder Name</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {userFolders.map((folder) => (
-            <tr key={folder.id}>
-              <td>
-                <Link className="links" to={`/folder/${folder.id}`}>
-                  {folder.name}
-                </Link>
-              </td>
-              <td>
-                <button
-                  className="btn btn-danger"
-                  onClick={() => handleDeleteFolder(folder.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+    <Fragment>
+      <header className="bg-slate-700 py-5">
+        <h1 className="text-center text-white text-2xl capitalize font-bold">
+          Folder Name: <span>👉</span> {folderName}
+        </h1>
+      </header>
 
-export default Folder;
+      <div className="file-folder-create">
+        <input type="file" onChange={handleFileUpload} disabled={uploading} />
+        <button disabled={uploading}>Uploading file</button>
+        {uploading && <p>Uploading...</p>}
+      </div>
+    </Fragment>
+  );
+};
+
+export default FolderPage;

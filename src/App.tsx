@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./authentication/Login";
 import Register from "./authentication/Register";
 import IndexLayout from "./Layout";
@@ -9,13 +9,13 @@ import Search from "./page/search";
 import Profile from "./page/profile";
 import Folder from "./page/folder";
 
-const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem("isAuthenticated") === "true";
   });
 
   useEffect(() => {
-    localStorage.setItem("isAuthenticated", isAuthenticated);
+    localStorage.setItem("isAuthenticated", String(isAuthenticated));
   }, [isAuthenticated]);
 
   return (
@@ -31,10 +31,10 @@ const App = () => {
         />
 
         <Route path="/" element={<IndexLayout />}>
-          <Route path="/" index element={<Home />} />
+          <Route path="/" element={<Home />} />
           <Route path="/folder/:folderId" element={<Folder />} />
-          <Route path="/search" index element={<Search />} />
-          <Route path="/profile" index element={<Profile />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

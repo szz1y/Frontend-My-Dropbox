@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   collection,
   getDocs,
@@ -6,12 +6,7 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage, db } from "../firebase/firebase";
 
 import file from "../../public/file.svg";
@@ -21,16 +16,24 @@ import folder2 from "../../public/folder2.svg";
 import close from "../../public/close.svg";
 import { Link } from "react-router-dom";
 
-const Home = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileUploadProgress, setFileUploadProgress] = useState(0);
-  const [uploadedFileUrl, setUploadedFileUrl] = useState("");
-  const [uploadedFileName, setUploadedFileName] = useState("");
-  const [files, setFiles] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [folderName, setFolderName] = useState("");
-  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+interface File {
+  name: string;
+  url: string;
+  id: string;
+}
+
+interface Folder {
+  name: string;
+  id: string;
+}
+
+const Home: React.FC = () => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folderName, setFolderName] = useState<string>("");
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,13 +42,13 @@ const Home = () => {
         const foldersRef = collection(db, "folders");
         const filesSnapshot = await getDocs(filesRef);
         const foldersSnapshot = await getDocs(foldersRef);
-        const fileList = [];
-        const folderList = [];
+        const fileList: File[] = [];
+        const folderList: Folder[] = [];
         filesSnapshot.forEach((doc) => {
-          fileList.push({ id: doc.id, ...doc.data() });
+          fileList.push({ id: doc.id, ...doc.data() } as File);
         });
         foldersSnapshot.forEach((doc) => {
-          folderList.push({ id: doc.id, ...doc.data() });
+          folderList.push({ id: doc.id, ...doc.data() } as Folder);
         });
         setFiles(fileList);
         setFolders(folderList);
@@ -57,49 +60,50 @@ const Home = () => {
     fetchData();
   }, [isFolderModalOpen]);
 
-  const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
-    setUploadedFileName(e.target.files[0].name);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile({
+        name: e.target.files[0].name,
+        url: "",
+        id: "",
+      });
+      setUploadedFileName(e.target.files[0].name);
+    }
   };
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
       return;
     }
-
     const storageRef = ref(storage, `files/${selectedFile.name}`);
     const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-
+  
     uploadTask.on(
       "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setFileUploadProgress(progress);
-        if (progress === 100) {
-          setIsModalOpen(true);
-        }
-      },
+      undefined,
       (error) => {
         console.error("Error uploading file:", error);
+        // Display or handle the error in the UI
       },
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setUploadedFileUrl(downloadURL);
           saveFileMetadata(selectedFile.name, downloadURL);
           setFiles((prevFiles) => [
             ...prevFiles,
-            { name: selectedFile.name, url: downloadURL },
+            { name: selectedFile.name, url: downloadURL, id: "" },
           ]);
+          setSelectedFile(null);
+          setUploadedFileName(""); 
         } catch (error) {
           console.error("Error getting download URL:", error);
+          // Display or handle the error in the UI
         }
       }
     );
   };
-
-  const saveFileMetadata = async (fileName, fileUrl) => {
+  
+  const saveFileMetadata = async (fileName: string, fileUrl: string) => {
     try {
       const filesRef = collection(db, "files");
       const newFile = { name: fileName, url: fileUrl };
@@ -109,32 +113,22 @@ const Home = () => {
     }
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setFileUploadProgress(0);
-    setSelectedFile(null);
-    setUploadedFileName("");
-  };
-
-  const handleCopy = (url) => {
+  const handleCopy = (url: string) => {
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
   };
 
-  const handleDeleteFile = async (url, id) => {
+  const handleDeleteFile = async (url: string, id: string) => {
+    alert("Are you sure you want to delete it?")
     try {
-      console.log("Deleting file with id:", id);
-      console.log("DB:", db);
-      const fileRef = doc(db, "files", id);
-      await deleteDoc(fileRef);
+      await deleteDoc(doc(db, "files", id));
       setFiles((prevFiles) => prevFiles.filter((file) => file.url !== url));
-      console.log("File deleted successfully");
     } catch (error) {
       console.error("Error deleting file:", error);
     }
   };
 
-  const handleDeleteFolder = async (id) => {
+  const handleDeleteFolder = async (id: string) => {
     try {
       await deleteDoc(doc(db, "folders", id));
       setFolders((prevFolders) =>
@@ -160,15 +154,23 @@ const Home = () => {
     }
   };
 
-  const handleFolderNameChange = (e) => {
+  const handleFolderNameChange = (e: { target: { value: string } }) => {
     setFolderName(e.target.value);
   };
 
   const openFolderModal = () => {
-    setFolderName(""); // Holatni tozalash
-    setIsFolderModalOpen(true); // Modalni ochish
+    setFolderName("");
+    setIsFolderModalOpen(true);
   };
 
+  const openFile = (fileUrl: string) => {
+    if (fileUrl) {
+      window.open(fileUrl, '_blank');
+    }
+  };
+  
+  
+  
   return (
     <header>
       <div className="container-home flex justify-between">
@@ -231,37 +233,6 @@ const Home = () => {
       </div>
       <hr className="mt-8 border-2" />
 
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
-          <div className="bg-white relative p-8 rounded-lg">
-            <button
-              className="absolute top-1 right-1 text-red-500"
-              onClick={closeModal}
-            >
-              <img src={close} alt="close" />
-            </button>
-            <p className="font-bold p-3 text-green-500">
-              Uploading file successful !!!
-            </p>
-            <div className="flex justify-center p-3">
-              <progress value={fileUploadProgress} max="100" />
-            </div>
-            {fileUploadProgress === 100 && (
-              <div className="flex justify-center p-3">
-                <a
-                  href={uploadedFileUrl}
-                  className="text-blue-500"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <h2 className="font-bold">Open File</h2>
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="flex justify-around file-list">
         <table className="border-collapse ml-5">
           <thead>
@@ -277,14 +248,12 @@ const Home = () => {
               >
                 <td className="flex items-center  px-4 py-2">
                   <img className="mr-2" src={file2} alt="file2" />
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
+                  <button
+                    onClick={() => openFile(file.url, file.name)}
+                    className="text-blue-500 hover:underline cursor-pointer"
                   >
                     <p className="font-bold text-sm">{file.name}</p>
-                  </a>
+                  </button>
                 </td>
                 <td className="px-4 py-2">
                   <button
@@ -299,6 +268,15 @@ const Home = () => {
                   >
                     Delete
                   </button>
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={file.name}
+                    className="px-3 py-1 ml-3 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    Download
+                  </a>
                 </td>
               </tr>
             ))}
