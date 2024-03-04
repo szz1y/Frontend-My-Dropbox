@@ -1,11 +1,31 @@
-import { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState, ChangeEvent } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
-import { db, storage } from "../firebase/firebase"; // Import storage from Firebase
+import { db, storage } from "../firebase/firebase";
+import file from "../../public/file.svg";
+import folder from "../../public/folder.svg";
+import file2 from "../../public/file2.svg";
+import folder2 from "../../public/folder2.svg";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  listAll,
+  getDownloadURL,
+} from "firebase/storage";
+import { auth } from "../firebase/firebase"; // Import auth from Firebase
+
+interface Params {
+  folderId: string;
+}
+
 const FolderPage: React.FC = () => {
-  const { folderId } = useParams<{ folderId: string }>();
+  const { folderId } = useParams<Params>();
   const [folderName, setFolderName] = useState<string>("");
-  const [uploading, setUploading] = useState<boolean>(false); // State to track uploading status
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    { name: string; url: string }[]
+  >([]);
 
   useEffect(() => {
     const fetchFolderName = async () => {
@@ -27,21 +47,57 @@ const FolderPage: React.FC = () => {
     fetchFolderName();
   }, [folderId]);
 
-  // Function to handle file upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploading(true);
-      const storageRef = storage.ref(`${folderId}/${file.name}`);
+  useEffect(() => {
+    const fetchUploadedFiles = async () => {
+      const storageRef = ref(storage, `${folderId}/uploads`);
       try {
-        await storageRef.put(file);
-        console.log("File uploaded successfully");
-        // You can add additional logic here, such as updating UI or state
+        const filesList = await listAll(storageRef);
+        const promises = filesList.items.map(async (item) => {
+          const url = await getDownloadURL(item);
+          return { name: item.name, url };
+        });
+        const files = await Promise.all(promises);
+        setUploadedFiles(files);
       } catch (error) {
-        console.error("Error uploading file:", error);
-      } finally {
-        setUploading(false);
+        console.error("Error fetching uploaded files:", error);
       }
+    };
+
+    fetchUploadedFiles();
+  }, [folderId]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(e.target.files);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (selectedFiles) {
+      const storageRef = ref(storage, `${folderId}/uploads`);
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const fileRef = ref(storageRef, file.name);
+
+        try {
+          await uploadBytes(fileRef, file);
+          console.log("File uploaded successfully");
+        } catch (error) {
+          console.error("Error uploading file:", error);
+        }
+      }
+
+      // Fetch and update the list of uploaded files
+      const filesList = await listAll(storageRef);
+      const promises = filesList.items.map(async (item) => {
+        const url = await getDownloadURL(item);
+        return { name: item.name, url };
+      });
+      const files = await Promise.all(promises);
+      setUploadedFiles(files);
+
+      setSelectedFiles(null); // Clear selected files after upload
     }
   };
 
@@ -52,11 +108,66 @@ const FolderPage: React.FC = () => {
           Folder Name: <span>👉</span> {folderName}
         </h1>
       </header>
+      <div className="container-home">
+        <div>
+          <h3 className="text-xl font-bold text-center py-5">Upload File</h3>
+          <label
+            className="custum-file-upload folder-file-upload"
+            htmlFor="file"
+          >
+            <div className="icon">
+              <img src={file} alt="file" />
+            </div>
+            <input type="file" id="file" onChange={handleFileChange} />
+            {selectedFiles && (
+              <div className="font-bold flex items-center pr-2">
+                {Array.from(selectedFiles).map((file, index) => (
+                  <div key={index}>{file.name}</div>
+                ))}
+              </div>
+            )}
+          </label>
+          <div>
+            <button
+              onClick={handleFileUpload}
+              className="rounded-full bg-blue-500 text-white px-3 py-2 m-3 hover:bg-blue-600 focus:outline-none focus:bg-blue-600"
+            >
+              Upload
+            </button>
+          </div>
 
-      <div className="file-folder-create">
-        <input type="file" onChange={handleFileUpload} disabled={uploading} />
-        <button disabled={uploading}>Uploading file</button>
-        {uploading && <p>Uploading...</p>}
+          <div className="uploaded-files">
+            <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+              <thead className="bg-gray-200 text-gray-700">
+                <tr>
+                  <th className="py-2 px-4 font-bold">File Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadedFiles.map((file, index) => (
+                  <tr
+                    className="bg-gray-100 border-b border-gray-200"
+                    key={index}
+                  >
+                    <td className="py-2 px-4 flex items-center">
+                      <img src={folder2} alt="folder" className="mr-2" />
+                      <h3 className="mr-1 font-bold">+</h3>
+                      <img src={file2} alt="file" className="mr-2" />
+                      <a
+                        className="font-bold text-blue-700"
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {file.name}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </Fragment>
   );

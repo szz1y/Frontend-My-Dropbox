@@ -5,8 +5,14 @@ import {
   addDoc,
   doc,
   deleteDoc,
+  getFirestore,
 } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  getStorage,
+} from "firebase/storage";
 import { storage, db } from "../firebase/firebase";
 
 import file from "../../public/file.svg";
@@ -28,7 +34,9 @@ interface Folder {
 }
 
 const Home: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null); // Manage selected files
+  const [selectedFileName, setSelectedFileName] = useState<string>(""); // Store selected file name
+
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -58,73 +66,66 @@ const Home: React.FC = () => {
     };
 
     fetchData();
-  }, [isFolderModalOpen]);
+  }, [isFolderModalOpen]); // Bu qator kodi isFolderModalOpen o'zgaruvchisiga bog'liq bo'lib ishlaydi
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile({
-        name: e.target.files[0].name,
-        url: "",
-        id: "",
-      });
-      setUploadedFileName(e.target.files[0].name);
+      const fileName = e.target.files[0].name;
+      setSelectedFileName(fileName);
+      setSelectedFiles(e.target.files);
     }
   };
 
   const handleFileUpload = async () => {
-    if (!selectedFile) {
-      return;
-    }
-    const storageRef = ref(storage, `files/${selectedFile.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-  
-    uploadTask.on(
-      "state_changed",
-      undefined,
-      (error) => {
-        console.error("Error uploading file:", error);
-        // Display or handle the error in the UI
-      },
-      async () => {
+    if (selectedFiles) {
+      const storage = getStorage(); // Get storage reference
+      const firestore = getFirestore(); // Get firestore reference
+      // Iterate over selected files and upload each file
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const storageRef = ref(storage, `files/${file.name}`); // Reference to the file in storage
+        // Upload the file
         try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          saveFileMetadata(selectedFile.name, downloadURL);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+          // Wait for the upload to complete
+          const snapshot = await uploadTask;
+          // Get the download URL of the uploaded file
+          const downloadURL = await getDownloadURL(snapshot.ref);
+
+          // Save file metadata to Firestore
+          await addDoc(collection(firestore, "files"), {
+            name: file.name,
+            url: downloadURL,
+          });
+
+          setUploadedFileName(file.name); // Update the uploaded file name
+          // Update file list after uploading
           setFiles((prevFiles) => [
             ...prevFiles,
-            { name: selectedFile.name, url: downloadURL, id: "" },
+            { name: file.name, url: downloadURL },
           ]);
-          setSelectedFile(null);
-          setUploadedFileName(""); 
         } catch (error) {
-          console.error("Error getting download URL:", error);
-          // Display or handle the error in the UI
+          console.error("Error uploading file:", error);
         }
       }
-    );
-  };
-  
-  const saveFileMetadata = async (fileName: string, fileUrl: string) => {
-    try {
-      const filesRef = collection(db, "files");
-      const newFile = { name: fileName, url: fileUrl };
-      await addDoc(filesRef, newFile);
-    } catch (error) {
-      console.error("Error adding file metadata to Firestore:", error);
+      setSelectedFiles(null); // Reset selected files after upload
+      setSelectedFileName(""); // Reset selected file name
     }
   };
-
   const handleCopy = (url: string) => {
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
   };
 
   const handleDeleteFile = async (url: string, id: string) => {
-    alert("Are you sure you want to delete it?")
-    try {
-      await deleteDoc(doc(db, "files", id));
-      setFiles((prevFiles) => prevFiles.filter((file) => file.url !== url));
-    } catch (error) {
-      console.error("Error deleting file:", error);
+    const confirmed = window.confirm("Are you sure you want to delete it?");
+    if (confirmed) {
+      try {
+        await deleteDoc(doc(db, "files", id));
+        setFiles((prevFiles) => prevFiles.filter((file) => file.url !== url));
+      } catch (error) {
+        console.error("Error deleting file:", error);
+      }
     }
   };
 
@@ -158,19 +159,15 @@ const Home: React.FC = () => {
     setFolderName(e.target.value);
   };
 
+  const openFile = (url) => {
+    window.open(url, "_blank");
+  };
+
   const openFolderModal = () => {
     setFolderName("");
     setIsFolderModalOpen(true);
   };
 
-  const openFile = (fileUrl: string) => {
-    if (fileUrl) {
-      window.open(fileUrl, '_blank');
-    }
-  };
-  
-  
-  
   return (
     <header>
       <div className="container-home flex justify-between">
@@ -181,9 +178,9 @@ const Home: React.FC = () => {
               <img src={file} alt="file" />
             </div>
             <input type="file" id="file" onChange={handleFileChange} />
-            {uploadedFileName && (
+            {selectedFileName && (
               <h3 className="font-bold flex items-center pr-2">
-                {uploadedFileName}
+                {selectedFileName}
               </h3>
             )}
           </label>
@@ -233,11 +230,11 @@ const Home: React.FC = () => {
       </div>
       <hr className="mt-8 border-2" />
 
-      <div className="flex justify-around file-list">
-        <table className="border-collapse ml-5">
-          <thead>
+      <div className="flex justify-center file-list mt-5">
+        <table className="border-collapse ml-5 bg-white shadow-md rounded-lg overflow-hidden">
+          <thead className="bg-gray-200 text-gray-700">
             <tr className="border-b-2 border-gray-400">
-              <th className="px-4 py-2 text-left">File Name</th>
+              <th className="px-4 py-2  text-left">File Name</th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +246,7 @@ const Home: React.FC = () => {
                 <td className="flex items-center  px-4 py-2">
                   <img className="mr-2" src={file2} alt="file2" />
                   <button
-                    onClick={() => openFile(file.url, file.name)}
+                    onClick={() => openFile(file.url)}
                     className="text-blue-500 hover:underline cursor-pointer"
                   >
                     <p className="font-bold text-sm">{file.name}</p>
@@ -268,22 +265,13 @@ const Home: React.FC = () => {
                   >
                     Delete
                   </button>
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={file.name}
-                    className="px-3 py-1 ml-3 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Download
-                  </a>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <table className="border-collapse ml-5">
-          <thead>
+        <table className="border-collapse ml-5 bg-white shadow-md rounded-lg overflow-hidden">
+          <thead className="bg-gray-200 text-gray-700">
             <tr className="border-b-2 border-gray-400">
               <th className="px-4 py-2 text-left">Folder Name</th>
             </tr>

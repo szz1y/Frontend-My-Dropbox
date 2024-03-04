@@ -5,7 +5,6 @@ import Register from "./authentication/Register";
 import IndexLayout from "./Layout";
 import NotFound from "./NotFound";
 import Home from "./page/home";
-import Search from "./page/search";
 import Profile from "./page/profile";
 import Folder from "./page/folder";
 
@@ -33,7 +32,6 @@ const App: React.FC = () => {
         <Route path="/" element={<IndexLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/folder/:folderId" element={<Folder />} />
-          <Route path="/search" element={<Search />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<NotFound />} />

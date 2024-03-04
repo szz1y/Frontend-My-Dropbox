@@ -23,3 +23,8 @@
 .custum-file-upload input {
   display: none;
 }
+
+.folder-file-upload {
+  max-width: 350px;
+  padding: 10px;
+}
