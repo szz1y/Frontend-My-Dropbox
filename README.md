@@ -1,30 +1,36 @@
-# React + TypeScript + Vite
+# Project Name
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Dropbox
 
-Currently, two official plugins are available:
+This project is a file management system similar to Dropbox, built using Vite, Firebase, and TypeScript.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Installation
 
-## Expanding the ESLint configuration
+1. Copy the repository URL.
+2. Open a terminal and navigate to your desired directory.
+3. Run `git clone <repository-url>` to clone the project.
+4. Navigate into the project directory using `cd <project-name>`.
+5. Run `npm install` to install dependencies.
+6. Finally, run `npm run dev` to start the development server.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Usage
 
-- Configure the top-level `parserOptions` property like this:
+After the project is up and running, users can perform the following actions:
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+- Upload files: Click the "Upload" button and select files to upload.
+- Create folders: Click the "New Folder" button and start typing the name of the new folder.
+- Profile: Click the "Profile" button to navigate to the profile page and edit information.
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Dependencies
+
+- Vite: [https://vitejs.dev/](https://vitejs.dev/)
+- Firebase: [https://firebase.google.com/](https://firebase.google.com/)
+- TypeScript: [https://www.typescriptlang.org/](https://www.typescriptlang.org/)
+
+## Author
+
+This project was created by Yusupovna Ziyodabonu.
+
+## License
+
+This project is licensed under the MIT License.

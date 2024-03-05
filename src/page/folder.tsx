@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db, storage } from "../firebase/firebase";
 import file from "../../public/file.svg";
-import folder from "../../public/folder.svg";
 import file2 from "../../public/file2.svg";
 import folder2 from "../../public/folder2.svg";
 import {
@@ -13,7 +12,6 @@ import {
   listAll,
   getDownloadURL,
 } from "firebase/storage";
-import { auth } from "../firebase/firebase"; // Import auth from Firebase
 
 interface Params {
   folderId: string;
@@ -88,7 +86,6 @@ const FolderPage: React.FC = () => {
         }
       }
 
-      // Fetch and update the list of uploaded files
       const filesList = await listAll(storageRef);
       const promises = filesList.items.map(async (item) => {
         const url = await getDownloadURL(item);
@@ -97,7 +94,7 @@ const FolderPage: React.FC = () => {
       const files = await Promise.all(promises);
       setUploadedFiles(files);
 
-      setSelectedFiles(null); // Clear selected files after upload
+      setSelectedFiles(null);
     }
   };
 

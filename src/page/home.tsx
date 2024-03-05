@@ -34,8 +34,8 @@ interface Folder {
 }
 
 const Home: React.FC = () => {
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null); // Manage selected files
-  const [selectedFileName, setSelectedFileName] = useState<string>(""); // Store selected file name
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
 
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
@@ -66,7 +66,7 @@ const Home: React.FC = () => {
     };
 
     fetchData();
-  }, [isFolderModalOpen]); // Bu qator kodi isFolderModalOpen o'zgaruvchisiga bog'liq bo'lib ishlaydi
+  }, [isFolderModalOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -78,28 +78,22 @@ const Home: React.FC = () => {
 
   const handleFileUpload = async () => {
     if (selectedFiles) {
-      const storage = getStorage(); // Get storage reference
-      const firestore = getFirestore(); // Get firestore reference
-      // Iterate over selected files and upload each file
+      const storage = getStorage();
+      const firestore = getFirestore();
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        const storageRef = ref(storage, `files/${file.name}`); // Reference to the file in storage
-        // Upload the file
+        const storageRef = ref(storage, `files/${file.name}`);
         try {
           const uploadTask = uploadBytesResumable(storageRef, file);
-          // Wait for the upload to complete
           const snapshot = await uploadTask;
-          // Get the download URL of the uploaded file
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          // Save file metadata to Firestore
           await addDoc(collection(firestore, "files"), {
             name: file.name,
             url: downloadURL,
           });
 
-          setUploadedFileName(file.name); // Update the uploaded file name
-          // Update file list after uploading
+          setUploadedFileName(file.name);
           setFiles((prevFiles) => [
             ...prevFiles,
             { name: file.name, url: downloadURL },
@@ -108,8 +102,8 @@ const Home: React.FC = () => {
           console.error("Error uploading file:", error);
         }
       }
-      setSelectedFiles(null); // Reset selected files after upload
-      setSelectedFileName(""); // Reset selected file name
+      setSelectedFiles(null);
+      setSelectedFileName("");
     }
   };
   const handleCopy = (url: string) => {

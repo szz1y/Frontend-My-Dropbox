@@ -8,7 +8,7 @@ const ProfileEditPage = () => {
   const [isEditingEmail, setIsEditingEmail] = useState(false);
 
   useEffect(() => {
-    const userEmail = localStorage.getItem("email"); // Lokal saqlangan emailni olamiz
+    const userEmail = localStorage.getItem("email");
     if (userEmail) {
       setEmail(userEmail);
       setNewEmail(userEmail);
@@ -25,11 +25,11 @@ const ProfileEditPage = () => {
   }, []);
 
   useEffect(() => {
-    const userEmail = localStorage.getItem("email"); // Lokal saqlangan emailni olamiz
+    const userEmail = localStorage.getItem("email");
     if (userEmail) {
       setNewEmail(userEmail);
     }
-  }, [isEditingEmail]); // isEditingEmail o'zgarganda lokal saqlangan emailni yangilab qolamiz
+  }, [isEditingEmail]);
 
   const handleInputChange = (e) => {
     setNewEmail(e.target.value);
@@ -38,8 +38,8 @@ const ProfileEditPage = () => {
   const handleUpdateEmail = async () => {
     try {
       setIsEditingEmail(false);
-      localStorage.setItem("email", newEmail); // Saqlashda yangilangan emailni lokal saqlash
-      window.location.reload(); // Sahifani yangilash
+      localStorage.setItem("email", newEmail);
+      window.location.reload();
     } catch (error) {
       console.error(error);
       setErrorMessage("Failed to update email");
