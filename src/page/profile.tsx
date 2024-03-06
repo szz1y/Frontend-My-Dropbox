@@ -31,7 +31,7 @@ const ProfileEditPage = () => {
     }
   }, [isEditingEmail]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewEmail(e.target.value);
   };
 

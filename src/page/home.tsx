@@ -13,7 +13,7 @@ import {
   getDownloadURL,
   getStorage,
 } from "firebase/storage";
-import { storage, db } from "../firebase/firebase";
+import { db } from "../firebase/firebase";
 
 import file from "../../public/file.svg";
 import file2 from "../../public/file2.svg";
@@ -37,7 +37,7 @@ const Home: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
 
-  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [, setUploadedFileName] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderName, setFolderName] = useState<string>("");
@@ -66,7 +66,7 @@ const Home: React.FC = () => {
     };
 
     fetchData();
-  }, [isFolderModalOpen]);
+  }, [files, folders]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -96,7 +96,7 @@ const Home: React.FC = () => {
           setUploadedFileName(file.name);
           setFiles((prevFiles) => [
             ...prevFiles,
-            { name: file.name, url: downloadURL },
+            { id: doc.id, name: file.name, url: downloadURL },
           ]);
         } catch (error) {
           console.error("Error uploading file:", error);
@@ -115,8 +115,8 @@ const Home: React.FC = () => {
     const confirmed = window.confirm("Are you sure you want to delete it?");
     if (confirmed) {
       try {
-        await deleteDoc(doc(db, "files", id));
         setFiles((prevFiles) => prevFiles.filter((file) => file.url !== url));
+        await deleteDoc(doc(db, "files", id));
       } catch (error) {
         console.error("Error deleting file:", error);
       }
@@ -153,7 +153,7 @@ const Home: React.FC = () => {
     setFolderName(e.target.value);
   };
 
-  const openFile = (url) => {
+  const openFile = (url: string) => {
     window.open(url, "_blank");
   };
 
@@ -279,7 +279,7 @@ const Home: React.FC = () => {
                 <td className="flex items-center px-4 py-2">
                   <img className="mr-2" src={folder2} alt="folder2" />
                   <Link to={`/folder/${folder.id}`}>
-                    <h3 className="font-bold">{folder.name}</h3>
+                    <h3 className="font-bold text-yellow-500">{folder.name}</h3>
                   </Link>
                 </td>
                 <td className=" flex items-center px-4 py-2">

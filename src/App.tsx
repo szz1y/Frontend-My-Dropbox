@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./authentication/Login";
-import Register from "./authentication/Register";
+import Login from "./authentication/login";
+import Register from "./authentication/register";
 import IndexLayout from "./Layout";
-import NotFound from "./NotFound";
+import NotFound from "./notFound";
 import Home from "./page/home";
 import Profile from "./page/profile";
 import Folder from "./page/folder";

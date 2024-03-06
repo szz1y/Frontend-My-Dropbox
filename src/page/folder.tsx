@@ -6,19 +6,16 @@ import file from "../../public/file.svg";
 import file2 from "../../public/file2.svg";
 import folder2 from "../../public/folder2.svg";
 import {
-  getStorage,
   ref,
   uploadBytes,
   listAll,
   getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 
-interface Params {
-  folderId: string;
-}
-
 const FolderPage: React.FC = () => {
-  const { folderId } = useParams<Params>();
+  const { folderId } = useParams<{ folderId: string }>(); // Change here
+
   const [folderName, setFolderName] = useState<string>("");
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -28,14 +25,16 @@ const FolderPage: React.FC = () => {
   useEffect(() => {
     const fetchFolderName = async () => {
       try {
-        const folderDoc = await getDoc(doc(db, "folders", folderId));
-        if (folderDoc.exists()) {
-          const folderData = folderDoc.data();
-          if (folderData) {
-            setFolderName(folderData.name);
+        if (folderId) {
+          const folderDoc = await getDoc(doc(db, "folders", folderId));
+          if (folderDoc.exists()) {
+            const folderData = folderDoc.data();
+            if (folderData) {
+              setFolderName(folderData.name);
+            }
+          } else {
+            console.log("Folder not found");
           }
-        } else {
-          console.log("Folder not found");
         }
       } catch (error) {
         console.error("Error fetching folder name:", error);
@@ -98,6 +97,24 @@ const FolderPage: React.FC = () => {
     }
   };
 
+  const handleFileDelete = async (fileName: string) => {
+    const storageRef = ref(storage, `${folderId}/uploads/${fileName}`);
+    try {
+      await deleteObject(storageRef);
+      console.log("File deleted successfully");
+      setUploadedFiles((prevFiles) =>
+        prevFiles.filter((file) => file.name !== fileName)
+      );
+    } catch (error) {
+      console.error("Error deleting file:", error);
+    }
+  };
+
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    alert("Link copied to clipboard!");
+  };
+
   return (
     <Fragment>
       <header className="bg-slate-700 py-5">
@@ -138,6 +155,7 @@ const FolderPage: React.FC = () => {
               <thead className="bg-gray-200 text-gray-700">
                 <tr>
                   <th className="py-2 px-4 font-bold">File Name</th>
+                  <th className="py-2 px-4 font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,6 +176,20 @@ const FolderPage: React.FC = () => {
                       >
                         {file.name}
                       </a>
+                    </td>
+                    <td className="py-2 px-4 text-center">
+                      <button
+                        className="text-blue-500 mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-2 border border-blue-500 hover:border-transparent rounded"
+                        onClick={() => handleCopyLink(file.url)}
+                      >
+                        Copy Link
+                      </button>
+                      <button
+                        className="text-red-500 bg-transparent hover:bg-red-500 text-red-700 font-semibold hover:text-white py-1 px-2 border border-red-500 hover:border-transparent rounded"
+                        onClick={() => handleFileDelete(file.name)}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
