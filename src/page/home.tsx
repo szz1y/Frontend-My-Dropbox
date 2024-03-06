@@ -88,7 +88,7 @@ const Home: React.FC = () => {
           const snapshot = await uploadTask;
           const downloadURL = await getDownloadURL(snapshot.ref);
 
-          await addDoc(collection(firestore, "files"), {
+          const docRef = await addDoc(collection(firestore, "files"), {
             name: file.name,
             url: downloadURL,
           });
@@ -96,7 +96,7 @@ const Home: React.FC = () => {
           setUploadedFileName(file.name);
           setFiles((prevFiles) => [
             ...prevFiles,
-            { id: doc.id, name: file.name, url: downloadURL },
+            { id: docRef.id, name: file.name, url: downloadURL },
           ]);
         } catch (error) {
           console.error("Error uploading file:", error);
@@ -106,6 +106,7 @@ const Home: React.FC = () => {
       setSelectedFileName("");
     }
   };
+
   const handleCopy = (url: string) => {
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
