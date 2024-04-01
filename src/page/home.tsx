@@ -13,7 +13,7 @@ import {
   getDownloadURL,
   getStorage,
 } from "firebase/storage";
-import { auth, db, createFolderFirestorage, } from "../firebase/firebase";
+import { auth, db, createFolderFirestorage } from "../firebase/firebase";
 
 import file from "../../public/file.svg";
 import file2 from "../../public/file2.svg";
@@ -41,24 +41,23 @@ const Home: React.FC = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderName, setFolderName] = useState<string>("");
   const [isFolderModalOpen, setIsFolderModalOpen] = useState<boolean>(false);
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string>("");
 
- 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if(user){
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
         setUserId(user.uid);
-      }else{
-        setUserId('')
+      } else {
+        setUserId("");
       }
-    })
+    });
     return () => unsubscribe();
-  })
-  
-  useEffect(() => { 
+  });
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        const foldersRef = collection(db, "folders", userId, 'folder');
+        const foldersRef = collection(db, "folders", userId, "folder");
         const filesRef = collection(db, "files");
         const filesSnapshot = await getDocs(filesRef);
         const foldersSnapshot = await getDocs(foldersRef);
@@ -138,7 +137,7 @@ const Home: React.FC = () => {
 
   const handleDeleteFolder = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "folders", userId, 'folder', id));
+      await deleteDoc(doc(db, "folders", userId, "folder", id));
       setFolders((prevFolders) =>
         prevFolders.filter((folder) => folder.id !== id)
       );
@@ -146,9 +145,9 @@ const Home: React.FC = () => {
       console.error("Error deleting folder:", error);
     }
   };
-  
+
   const createFolder = async () => {
-    if (folderName.trim() === "") return; 
+    if (folderName.trim() === "") return;
 
     try {
       await createFolderFirestorage(folderName);

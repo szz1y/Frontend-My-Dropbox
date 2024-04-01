@@ -353,7 +353,7 @@ const FolderPage: React.FC = () => {
             </table>
           </div>
         </div>
-      </div>
+      </div> 
     </Fragment>
   );
 };
